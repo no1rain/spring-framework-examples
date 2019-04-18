@@ -602,6 +602,25 @@ public class StringUtil {
 		return s.toLowerCase();
 	}
 
+	/**
+	  *  byte size를 가져온다.
+	  *
+	  * @param str String target
+	  * @return int bytelength
+	  */
+	    public static int getByteSize(String str){
+	        if (str == null || str.length() == 0)
+	            return 0;
+	        byte[] byteArray = null;
+	        try{
+	            byteArray = str.getBytes("UTF-8");
+	        }catch (UnsupportedEncodingException ex){
+
+	        }
+	        if (byteArray == null) return 0;
+	        return byteArray.length;
+	 }
+
     public static int getByte(String s)
     {
         int i = 1;
@@ -655,6 +674,96 @@ public class StringUtil {
 		}
 		return tBuff;
 	}
+
+    /*
+     * 긴 문자열 자르기
+     * @param srcString      대상문자열
+     * @param nLength        길이
+     * @param isNoTag        테그 제거 여부
+     * @param isAddDot        "..."을추가 여부
+     * @return
+     */
+    public static String strCut(String srcString, int nLength, boolean isNoTag, boolean isAddDot){  // 문자열 자르기
+    	String rtnVal = srcString;
+    	int oF = 0, oL = 0, rF = 0, rL = 0;
+    	int nLengthPrev = 0;
+
+    	// 태그 제거
+        if(isNoTag) {
+        	Pattern p = Pattern.compile("<(/?)([^<>]*)?>", Pattern.CASE_INSENSITIVE);  // 태그제거 패턴{
+        	rtnVal = p.matcher(rtnVal).replaceAll("");
+        }
+        rtnVal = rtnVal.replaceAll("&amp;", "&");
+        rtnVal = rtnVal.replaceAll("(!/|\r|\n|&nbsp;)", "");  // 공백제거
+        try {
+        	byte[] bytes = rtnVal.getBytes("UTF-8");     // 바이트로 보관
+        	// x부터 y길이만큼 잘라낸다. 한글안깨지게.
+        	int j = 0;
+        	if(nLengthPrev > 0) while(j < bytes.length) {
+        		if((bytes[j] & 0x80) != 0) {
+        			oF+=2; rF+=3; if(oF+2 > nLengthPrev) {break;} j+=3;
+        		}else {
+        			if(oF+1 > nLengthPrev) {break;} ++oF; ++rF; ++j;
+        		}
+        	}
+
+        	j = rF;
+
+        	while(j < bytes.length) {
+        		if((bytes[j] & 0x80) != 0) {
+        			if(oL+2 > nLength) {
+        				break;
+        			}
+        			oL+=2; rL+=3; j+=3;
+        		}else {
+        			if(oL+1 > nLength) {
+        				break;
+        			}
+        			++oL; ++rL; ++j;
+        		}
+        	}
+
+        	rtnVal = new String(bytes, rF, rL, "UTF-8");  // charset 옵션
+
+        	if(isAddDot && rF+rL+3 <= bytes.length) {rtnVal+="...";}  // ...을 붙일지말지 옵션
+        } catch (UnsupportedEncodingException e) {
+        	e.printStackTrace();
+        	return srcString;
+        }
+
+        return rtnVal;
+
+    }
+
+    /*
+     * String 앞 또는 뒤를 특정문자로 지정한 길이만큼 채워주는 함수    <BR>
+     * (예) pad("1234","0", 6, 1) --> "123400"   <BR>
+     *
+     * @param    src  Source string
+     * @param    pad  pad string
+     * @param    totLen     total length
+     * @param    mode     앞/뒤 구분 (-1:front, 1:back)
+     * @return   String
+     */
+    public static String pad(String src, String pad, int totLen, int mode){
+    	String paddedString = "";
+
+    	if(src == null) return "";
+    	int srcLen = src.length();
+
+    	if((totLen<1)||(srcLen>=totLen)) return src;
+
+    	for(int i=0; i< (totLen-srcLen); i++){
+    		paddedString += pad;
+    	}
+
+    	if(mode == -1)
+    		paddedString += src; // front padding
+    	else
+    		paddedString = src + paddedString; // back padding
+
+    	return paddedString;
+    }
 
     /**
     * 주어진 길이(n)만큼 주어진 문자(replace)를 s의 왼쪽에 붙혀서 보내준다.

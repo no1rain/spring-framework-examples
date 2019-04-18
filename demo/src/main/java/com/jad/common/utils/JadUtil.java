@@ -5,8 +5,11 @@ import java.io.IOException;
 import java.io.PrintStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.text.DecimalFormat;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.StringTokenizer;
 
 public class JadUtil {
 
@@ -40,6 +43,96 @@ public class JadUtil {
   				);
     }
 
+    /*
+     * String을 int형으로
+     * @param value
+     */
+    public static int parseInt(String value) {
+    	return parseInt(value, 0);
+    }
+
+    /*
+     * Object를 int형으로
+     * defaultValue는 0이다.
+     * @param value
+     */
+    public static int parseInt(Object value) {
+    	String valueStr = replaceNull(value);
+    	return parseInt(valueStr, 0);
+    }
+
+    /*
+     * String을 int형으로
+     * String이 숫자 형식이 아니면 defaultValue return
+     * @param value
+     * @param defaultValue
+     */
+    public static int parseInt(String value, int defaultValue) {
+    	int returnValue = 0;
+
+    	if(isNull(value)) {
+    		returnValue = defaultValue;
+    	} else if(!IsNumeric(value)) {
+    		returnValue = defaultValue;
+    	} else {
+    		returnValue = Integer.parseInt(value);
+    	}
+    	return returnValue;
+    }
+
+    /*
+     * String을 long형으로
+     * defaultValue는 0이다.
+     * @param value
+     */
+    public static long parseLong(String value) {
+    	return parseLong(value, 0);
+    }
+
+    /*
+     * String을 long형으로
+     * 잘못된 데이타 일시 return은 defaultValue
+     *  @param value
+     */
+    public static long parseLong(String value, long defaultValue) {
+    	long returnValue = 0;
+
+    	if(isNull(value)) {
+    		returnValue = defaultValue;
+    	} else if(!IsNumeric(value)) {
+    		returnValue = defaultValue;
+    	} else {
+    		returnValue = Long.parseLong(value);
+    	}
+
+    	return returnValue;
+    }
+
+    /*
+     * Double 형으로 정상 파싱되면 숫자라고 봄
+     */
+    public static boolean IsNumeric(String str_num) {
+    	try {
+    		Double.parseDouble(str_num);
+    		return true;
+    	} catch (NumberFormatException e) {
+    		return false;
+    	}
+    }
+
+    /*
+     * 해당 Object가 String or Integer 이면 true
+     * 아니면 false
+     */
+    public static boolean isStringInteger(Object obj) {
+    	boolean flag = false;
+
+    	if(obj instanceof String || obj instanceof Integer) {
+    		flag = true;
+    	}
+    	return flag;
+    }
+
     /**
      * total과 success 로 % 구하고 소수점 1자리까지 계산
      * @param int success
@@ -59,6 +152,20 @@ public class JadUtil {
     		result = new java.text.DecimalFormat("#.#").format(cal);
     	}
     	return result;
+    }
+
+    /*
+     * 백분율을 구한다.
+     * %는 빼고 값만 리턴
+     * @param value
+     * @param total
+     * @return
+     */
+    public static String percentValue(int value, int total) {
+    	double val = Double.parseDouble(String.valueOf(value)) / Double.parseDouble(String.valueOf(total)) * 100;
+
+    	DecimalFormat df = new DecimalFormat("##0.0");
+    	return df.format(val);
     }
 
     /**
@@ -387,6 +494,32 @@ public class JadUtil {
     }
 
     /*
+     * XSS(Cross Site Scripting) 취약점 해결을 위한 처리
+     *
+     * @param sourceString String 원본문자열
+     * @return String 변환문자열
+     */
+    public static String replaceXSS(String sourceString){
+    	String rtnValue = null;
+    	if(sourceString != null) {
+    		rtnValue = sourceString;
+    		if(rtnValue.indexOf("<x-") == -1){
+    			rtnValue = rtnValue.replaceAll("< *(j|J)(a|A)(v|V)(a|A)(s|S)(c|C)(r|R)(i|I)(p|P)(t|T)", "<x-javascript");
+    			rtnValue = rtnValue.replaceAll("< *(v|V)(b|B)(s|S)(c|C)(r|R)(i|I)(p|P)(t|T)", "<x-vbscript");
+    			rtnValue = rtnValue.replaceAll("< *(s|S)(c|C)(r|R)(i|I)(p|P)(t|T)", "<x-script");
+    			rtnValue = rtnValue.replaceAll("< *(i|I)(f|F)(r|R)(a|A)(m|M)(e|E)", "<x-iframe");
+    			rtnValue = rtnValue.replaceAll("< *(f|F)(r|R)(a|A)(m|M)(e|E)", "<x-frame");
+    			rtnValue = rtnValue.replaceAll("(e|E)(x|X)(p|P)(r|R)(e|E)(s|S)(s|S)(i|I)(o|O)(n|N)", "x-expression");
+    			rtnValue = rtnValue.replaceAll("(a|A)(l|L)(e|E)(r|R)(t|T)", "x-alert");
+    			rtnValue = rtnValue.replaceAll(".(o|O)(p|P)(e|E)(n|N)", ".x-open");
+    			rtnValue = rtnValue.replaceAll("< *(m|M)(a|A)(r|R)(q|Q)(u|U)(e|E)(e|E)", "<x-marquee");
+    			rtnValue = rtnValue.replaceAll("&#", "&amp;#");
+    		}
+    	}
+    	return rtnValue;
+    }
+
+    /*
      * Exception을 String으로 뽑아준다.
      * @param ex
      * @return
@@ -433,26 +566,55 @@ public class JadUtil {
 
     	return rtnValue;
     }
-    public static String changeQuotation(Object obj) {
-    	if(isStringInteger(obj)) {
-    		return changeQuotation(String.valueOf(obj));
+
+    /*
+     * String 배열을 List로 변환한다.
+     */
+    public static List<String> changeList(String[] values) {
+    	List<String> list = new ArrayList<String>();
+
+    	if(values == null) {
+    		return list;
+    	}
+    	for(int i=0,n=values.length; i<n; i++) {
+    		list.add(values[i]);
     	}
 
-    	return "";
+    	return list;
     }
 
     /*
-     * 해당 Object가 String or Integer 이면 true
-     * 아니면 false
-     * @param obj
-     * @return
+     *
      */
-    public static boolean isStringInteger(Object obj) {
-    	boolean flag = false;
+    public static String[] toTokenArray(String str, String sep){
+    	String[] temp = null;
 
-    	if( obj instanceof String || obj instanceof Integer ) {
-    		flag = true;
+    	try {
+    		StringTokenizer st = new StringTokenizer(str, sep);
+    		temp = new String[st.countTokens()];
+    		int index = 0;
+    		while(st.hasMoreTokens()) {
+    			temp[index++] = st.nextToken();
+    		}
+    	}catch(Exception e) {
+    		e.printStackTrace();
     	}
-    	return flag;
+    	return temp;
+    }
+
+    /*
+     *
+     */
+    public static String strip(String str, String str1){
+    	if(str == null || "".equals(str.trim())) return "";
+    	String temp = str;
+    	int pos = -1;
+    	while((pos = temp.indexOf(str1, pos)) != -1) {
+    		String left = temp.substring(0, pos);
+    		String right = temp.substring(pos + 1, temp.length());
+    		temp = left + "" + right;
+    		pos += 1;
+    	}
+    	return temp;
     }
 }
