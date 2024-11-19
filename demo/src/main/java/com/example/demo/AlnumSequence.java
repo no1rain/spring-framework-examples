@@ -19,7 +19,6 @@ public class AlnumSequence {
         HashMap<String, Object> map = new HashMap<String, Object>();
 
         map.put("attr_lvl", 1);
-        map.put("attr_cls", ATTRIB_STR);
         map.put("start_no", "95");
         map.put("end_no", "BC");
 
@@ -35,19 +34,19 @@ public class AlnumSequence {
         }
 
         while(sNum <= eNum) {
-            System.out.println(sNum + "=========>" + createNumberToAlnum(sNum, ATTRIB_STR));
+            System.out.println(sNum + "=========>" + createNumberToAlnum(sNum));
             sNum++;
         }
     }
 
-    private static String createNumberToAlnum(int seq, String attrCls) {
+    private static String createNumberToAlnum(int seq) {
         String[] alphabets = {"A","B","C","D","E","F","G","H","I","J","K","L","M","N","O","P","Q","R","S","T","U","V","W","X","Y","Z"};
         String returnStr = "";
 
         try {
             StringBuilder sb = new StringBuilder();
 
-            switch(attrCls) {
+            switch(ATTRIB_STR) {
                 case "AA":
                 case "AZ":
                 case "ZZ":
@@ -83,61 +82,70 @@ public class AlnumSequence {
         int sequence = 0;
         int idx = -1;
 
-        String rangeNo = String.valueOf(map.get(column));
+        try {
+            String rangeNo = String.valueOf(map.get(column));
 
-        String attrCls = String.valueOf(map.get("attr_cls"));
-        System.out.println("attrCls=====" + attrCls);
-        switch(attrCls) {
-            case "A0":
-            case "A9":
-                if(rangeNo.length() != 2) return idx;
-                if(isNumeric(rangeNo)) return Integer.parseInt(rangeNo);
+            switch(ATTRIB_STR) {
+                case "A0":
+                case "A9":
+                    if(rangeNo.length() != 2) return idx;
+                    if(isAlphabet(rangeNo)) return idx;
+                    if(isNumeric(rangeNo)) return Integer.parseInt(rangeNo);
 
-                idx = Arrays.asList(alphabets).indexOf(rangeNo.substring(0, 1));    // 영문 추출
-                if(idx > -1) {
-                    sequence = 100 + (10*idx) + Integer.parseInt(rangeNo.substring(1, 2));
-                    //(9*idx) : A1~9까지 사용시, (10*idx) : A0~A9까지 사용시
-                }
-                break;
-            case "0A":
-            case "0Z":
-            case "9A":
-            case "9Z":
-                if(rangeNo.length() != 2) return idx;
-                if(isNumeric(rangeNo)) return Integer.parseInt(rangeNo);
+                    idx = Arrays.asList(alphabets).indexOf(rangeNo.substring(0, 1));    // 영문 추출
+                    if(idx > -1) {
+                        sequence = 100 + (10*idx) + Integer.parseInt(rangeNo.substring(1, 2));
+                        //(9*idx) : A1~9까지 사용시, (10*idx) : A0~A9까지 사용시
+                    }
+                    break;
+                case "0A":
+                case "0Z":
+                case "9A":
+                case "9Z":
+                    if(rangeNo.length() != 2) return idx;
+                    if(isAlphabet(rangeNo)) return idx;
+                    if(isNumeric(rangeNo)) return Integer.parseInt(rangeNo);
 
-                idx = Arrays.asList(alphabets).indexOf(rangeNo.substring(1, 2));    // 영문 추출
-                if(idx > -1) {
-                    sequence = 100 + idx + (26 * (Integer.parseInt(rangeNo.substring(0, 1)) -1));
-                }
-                break;
-            case "AA":
-            case "AZ":
-            case "ZZ":
-                if(rangeNo.length() != 2) return idx;
-                if(isNumeric(rangeNo)) return Integer.parseInt(rangeNo);
+                    idx = Arrays.asList(alphabets).indexOf(rangeNo.substring(1, 2));    // 영문 추출
+                    if(idx > -1) {
+                        sequence = 100 + idx + (26 * (Integer.parseInt(rangeNo.substring(0, 1)) -1));
+                    }
+                    break;
+                case "AA":
+                case "AZ":
+                case "ZZ":
+                    if(rangeNo.length() != 2) return idx;
+                    if(isNumeric(rangeNo)) return Integer.parseInt(rangeNo);
 
-                // 1. 00~ZZ (00~99,AA~ZZ)
-                idx = Arrays.asList(alphabets).indexOf(rangeNo.substring(0, 1));    // 1번째 영문 추출
-                if(idx == -1)
-                    return idx;
+                    // 1. 00~ZZ (00~99,AA~ZZ)
+                    idx = Arrays.asList(alphabets).indexOf(rangeNo.substring(0, 1));    // 1번째 영문 추출
+                    if(idx == -1)
+                        return idx;
 
-                sequence = 100 + (26 * idx);
+                    sequence = 100 + (26 * idx);
 
-                idx = Arrays.asList(alphabets).indexOf(rangeNo.substring(1, 2));    // 2번째 영문 추출
-                if(idx == -1)
-                    return idx;
-                
-                sequence = sequence + idx;
-                // 2. AA~ZZ
-                break;
-            case "A..Z":
-                break;
-            default:
-                if(isNumeric(rangeNo)) return Integer.parseInt(rangeNo);
-                break;
+                    idx = Arrays.asList(alphabets).indexOf(rangeNo.substring(1, 2));    // 2번째 영문 추출
+                    if(idx == -1)
+                        return idx;
+                    
+                    sequence = sequence + idx;
+                    // 2. AA~ZZ
+                    break;
+                case "A..Z":
+                    break;
+                default:
+                    if(isNumeric(rangeNo)) return Integer.parseInt(rangeNo);
+                    break;
+            }
+        } catch (Exception e) {
+            System.out.println("getAlnumToNumber Exception##" + e.getMessage());
         }
         return sequence;
+    }
+
+    public static boolean isAlphabet(String str) {
+        Pattern pattern = Pattern.compile("[^A-Z]");
+        return !pattern.matcher(str).find();
     }
 
     public static boolean isNumeric(String str) {
